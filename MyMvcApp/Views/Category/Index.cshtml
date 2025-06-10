@@ -1,0 +1,195 @@
+﻿@model IEnumerable<FUDTOs.CategoryDTO>
+
+@{
+    ViewData["Title"] = "Categories";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    string currentFilter = Context.Request.Query["search"];
+
+    // Phân trang
+    int page = string.IsNullOrEmpty(Context.Request.Query["page"]) ? 1 : int.Parse(Context.Request.Query["page"]);
+    int pageSize = 5;
+    int totalItems = Model.Count();
+    int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+    var paginatedModel = Model.Skip((page - 1) * pageSize).Take(pageSize);
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-primary"><i class="bi bi-folder2-open"></i> @ViewData["Title"]</h2>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+            <i class="bi bi-plus-circle"></i> Create New
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @successMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="search" value="@currentFilter" class="form-control" placeholder="Search by category name..." />
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th style="white-space: nowrap;">Status</th>
+                    <th>Parent Category</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!paginatedModel.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No categories found.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in paginatedModel)
+                    {
+                        <tr>
+                            <td>@item.CategoryName</td>
+                            <td>@item.CategoryDesciption</td>
+                            <td>
+                                <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
+                                    @(item.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>@item.ParentCategoryName</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center">
+                                    <a asp-action="Edit" asp-route-id="@item.CategoryId" class="btn btn-sm btn-primary me-1">Edit</a>
+
+                                    <form asp-action="Delete" asp-route-id="@item.CategoryId" method="post" onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                        <button type="submit" class="btn btn-sm btn-danger me-1">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        @* Nút phân trang *@
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(page == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-route-page="@(page - 1)" asp-route-search="@currentFilter">Previous</a>
+                    </li>
+
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(page == i ? "active" : "")">
+                            <a class="page-link" asp-route-page="@i" asp-route-search="@currentFilter">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(page == totalPages ? "disabled" : "")">
+                        <a class="page-link" asp-route-page="@(page + 1)" asp-route-search="@currentFilter">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@* Modal cho form Create *@
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .table th, .table td {
+            vertical-align: middle;
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            var createCategoryModal = new bootstrap.Modal(document.getElementById('createCategoryModal'));
+
+            // Khi modal được show, tải partial view vào modal-content
+            $('#createCategoryModal').on('show.bs.modal', function (event) {
+                $.get('@Url.Action("Create", "Category")', function (data) {
+                    $('#createCategoryModal .modal-content').html(data);
+                });
+            });
+
+            // Xử lý submit form AJAX
+            $(document).on('submit', '#createCategoryForm', function (e) {
+                e.preventDefault(); // Ngăn chặn submit form mặc định
+
+                var form = $(this);
+                // Kích hoạt lại validation unobtrusive cho form được tải vào modal
+                if (!form.valid()) {
+                    return; // Nếu form không hợp lệ, dừng lại
+                }
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: form.attr('method'),
+                    data: form.serialize(),
+                    success: function (response) {
+                        // Response ở đây sẽ là RedirectToAction (Index)
+                        // Chúng ta cần xử lý nó bằng cách load lại trang hoặc cập nhật DOM
+                        // Để đơn giản, chúng ta sẽ load lại trang.
+                        // Hoặc bạn có thể trả về JSON với success/error message từ controller
+                        // và cập nhật TempData bằng JavaScript.
+
+                        // Đóng modal
+                        createCategoryModal.hide();
+
+                        // Hiện thông báo thành công hoặc lỗi từ TempData và load lại trang
+                        // (Thực tế TempData chỉ hoạt động với redirect)
+                        // Cách tốt hơn: trả về JSON từ Controller để hiển thị thông báo
+                        // tạm thời ở đây. Nhưng để giống với flow hiện tại, ta sẽ refresh.
+                        location.reload(); // Reload trang để thấy dữ liệu mới và thông báo từ TempData
+                    },
+                    error: function (xhr, status, error) {
+                        // Xử lý lỗi (ví dụ: hiển thị lỗi validation trả về từ server)
+                        // Nếu controller trả về BadRequest(ModelState), bạn có thể hiển thị lỗi
+                        // bên trong modal.
+                        console.error("Error submitting form:", error);
+                        // Cập nhật nội dung modal với lỗi validation nếu có
+                        $('#createCategoryModal .modal-content').html(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+}
