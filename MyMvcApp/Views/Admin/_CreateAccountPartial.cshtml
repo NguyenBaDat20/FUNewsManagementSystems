@@ -1,0 +1,48 @@
+﻿@model FUDTOs.SystemAccountDTO
+
+@* Đây là nội dung của modal body và footer *@
+
+<div class="modal-body">
+    @* Đây là nơi hiển thị Validation Summary nếu bạn dùng nó trong PartialView *@
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="AccountName" class="form-label">Full Name</label>
+        <input asp-for="AccountName" class="form-control" autocomplete="off" />
+        <span asp-validation-for="AccountName" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AccountEmail" class="form-label">Email</label>
+        <input asp-for="AccountEmail" class="form-control" autocomplete="off" />
+        <span asp-validation-for="AccountEmail" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AccountPassword" class="form-label">Password</label>
+        <input asp-for="AccountPassword" class="form-control" type="password" autocomplete="new-password" />
+        <span asp-validation-for="AccountPassword" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AccountRole" class="form-label">Role</label>
+        <select asp-for="AccountRole" class="form-select">
+            <option value="">-- Select Role --</option>
+            <option value="1">Staff</option>
+            <option value="2">Lecture</option>
+        </select>
+        <span asp-validation-for="AccountRole" class="text-danger"></span>
+    </div>
+    @* Để hiển thị lỗi chung từ server nếu không thuộc về một trường cụ thể *@
+    <div id="generalValidationErrors" class="text-danger"></div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-success">Create</button>
+</div>
+
+@* Script này rất quan trọng để client-side validation hoạt động với form tải động *@
+<script>
+    // Kích hoạt lại client-side validation cho form được tải động vào modal
+    // Kiểm tra và khởi tạo jQuery validation cho form nếu nó chưa được khởi tạo
+    if ($.validator && $.validator.unobtrusive) {
+        $.validator.unobtrusive.parse('#createAccountForm');
+    }
+</script>

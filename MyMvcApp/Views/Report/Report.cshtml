@@ -1,17 +1,71 @@
 ﻿@{
     ViewData["Title"] = "Generate Report";
+    // Nếu không có model, bạn không thể sử dụng asp-validation-for.
+    // Bạn sẽ phải tự xử lý thông báo lỗi từ Controller (ví dụ: thông qua ViewData/TempData).
+    var validationErrors = ViewData["ValidationErrors"] as Dictionary<string, string[]>;
 }
 
-<h2>@ViewData["Title"]</h2>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg p-4">
+                <div class="card-body">
+                    <h2 class="card-title text-center text-primary mb-4">
+                        <i class="bi bi-bar-chart-fill me-2"></i> @ViewData["Title"]
+                    </h2>
 
-<form asp-action="Report" method="post">
-    <div class="form-group">
-        <label>Start Date</label>
-        <input name="startDate" type="date" class="form-control" required />
+                    <form asp-action="Report" method="post">
+                        @Html.AntiForgeryToken() @* Luôn giữ Anti-forgery token *@
+
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label fw-bold">
+                                <i class="bi bi-calendar-date me-1"></i> Start Date
+                            </label>
+                            <input name="startDate" id="startDate" type="date" class="form-control form-control-lg" required />
+                            @* Tự hiển thị lỗi validation nếu có *@
+                            @if (validationErrors != null && validationErrors.ContainsKey("startDate"))
+                            {
+                                <span class="text-danger">@string.Join(", ", validationErrors["startDate"])</span>
+                            }
+                        </div>
+                        <div class="mb-4">
+                            <label for="endDate" class="form-label fw-bold">
+                                <i class="bi bi-calendar-date me-1"></i> End Date
+                            </label>
+                            <input name="endDate" id="endDate" type="date" class="form-control form-control-lg" required />
+                            @* Tự hiển thị lỗi validation nếu có *@
+                            @if (validationErrors != null && validationErrors.ContainsKey("endDate"))
+                            {
+                                <span class="text-danger">@string.Join(", ", validationErrors["endDate"])</span>
+                            }
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-file-earmark-bar-graph me-2"></i> Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-group">
-        <label>End Date</label>
-        <input name="endDate" type="date" class="form-control" required />
-    </div>
-    <button type="submit" class="btn btn-primary mt-2">Generate Report</button>
-</form>
+</div>
+
+@section Scripts {
+    @{
+        // Bạn có thể không cần _ValidationScriptsPartial nếu không sử dụng client-side validation của ASP.NET Core
+        // hoặc nếu bạn tự viết validation bằng JS
+        // await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            $('#startDate').on('change', function () {
+                $('#endDate').attr('min', $(this).val());
+            });
+
+            $('#endDate').on('change', function () {
+                $('#startDate').attr('max', $(this).val());
+            });
+        });
+    </script>
+}

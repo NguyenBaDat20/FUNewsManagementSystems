@@ -1,10 +1,5 @@
 ﻿using BusinessObjects;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -13,7 +8,7 @@ namespace DataAccess
 
         public async Task<List<Category>> GetAllAsync()
         {
-            return await _context.Categories.Include(c => c.ParentCategory).ToListAsync();
+            return await _context.Categories.Include(c => c.ParentCategory).OrderBy(c => c.ParentCategoryId).ToListAsync();
         }
 
         public async Task<Category?> GetByIdAsync(object id)
